@@ -57,7 +57,7 @@ async function loadTimersFromDB() {
     `;
     const res = await pool.query(query);
     res.rows.forEach(row => {
-        const userKey = `${row.user_id}:${row.key}`;
+        const userKey = `${row.key}`;
         redisClient.set(userKey, 'timer', 'EX', row.ttl);
     });
 }
@@ -121,6 +121,23 @@ subscriber.on('pmessage', async (pattern, channel, message) => {
     await pool.query('DELETE FROM timers WHERE key = $1', [message]);
     io.emit('timerExpired', { key: message });
 });
+
+async function sendTimersUpdate() {
+    const keys = await redisClient.keys('*');
+    const timers = [];
+
+    for (const key of keys) {
+        const ttl = await redisClient.ttl(key);
+        if (ttl > 0) {
+            timers.push({ key, ttl });
+        }
+    }
+
+    io.emit('timersUpdate', { timers });
+}
+
+// Периодически отправляем обновления времени оставшихся таймеров
+setInterval(sendTimersUpdate, 1000);
 
 // Новый эндпоинт для получения всех актуальных таймеров и их оставшегося времени
 app.get('/timers', async (req, res) => {

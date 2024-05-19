@@ -191,6 +191,31 @@
                 });
         }
 
+        socket.on('timersUpdate', function (data) {
+            const timersDiv = document.getElementById('timers');
+            timersDiv.innerHTML = ''; // Очищаем текущий список
+            const timers = data.timers;
+            if (timers.length > 0) {
+                const ul = document.createElement('ul');
+                timers.forEach(timer => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `Ключ: ${timer.key}, Секунд: ${timer.ttl}`;
+
+                    // Добавляем кнопку удаления
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'Удалить';
+                    deleteButton.classList.add('delete-button');
+                    deleteButton.onclick = () => deleteTimer(timer.key);
+
+                    li.appendChild(deleteButton);
+                    ul.appendChild(li);
+                });
+                timersDiv.appendChild(ul);
+            } else {
+                timersDiv.textContent = 'Нет активных таймеров.';
+            }
+        });
+
         function deleteTimer(key) {
             fetch('/delete-timer', {
                 method: 'POST',
@@ -269,8 +294,9 @@
             refreshTimers();
         });
 
-        // Обновляем список таймеров при загрузке страницы
-        refreshTimers();
+        function refreshTimers() {
+            // Этот вызов больше не нужен, так как мы используем сокеты для обновления
+        }
     </script>
 </body>
 
