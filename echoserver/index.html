@@ -132,21 +132,50 @@
                             const ul = document.createElement('ul');
                             timers.forEach(timer => {
                                 const li = document.createElement('li');
-                                li.innerHTML = `ключ: ${timer.key}, </br> секунд : ${timer.ttl} seconds`;
+                                li.innerHTML = `Ключ: ${timer.key}, Секунд: ${timer.ttl}`;
+
+                                // Добавляем кнопку удаления
+                                const deleteButton = document.createElement('button');
+                                deleteButton.textContent = 'Удалить';
+                                deleteButton.onclick = () => deleteTimer(timer.key);
+
+                                li.appendChild(deleteButton);
                                 ul.appendChild(li);
                             });
                             timersDiv.appendChild(ul);
                         } else {
-                            timersDiv.textContent = 'No active timers.';
+                            timersDiv.textContent = 'Нет активных таймеров.';
                         }
                     } else {
-                        timersDiv.textContent = 'Failed to load timers.';
+                        timersDiv.textContent = 'Не удалось загрузить таймеры.';
                     }
                 })
                 .catch(error => {
-                    console.error('Error:', error);
+                    console.error('Ошибка:', error);
                     const timersDiv = document.getElementById('timers');
-                    timersDiv.textContent = 'Failed to load timers.';
+                    timersDiv.textContent = 'Не удалось загрузить таймеры.';
+                });
+        }
+
+        function deleteTimer(key) {
+            fetch('/delete-timer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ key })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        refreshTimers(); // Обновляем список таймеров после удаления
+                    } else {
+                        alert('Не удалось удалить таймер');
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка:', error);
+                    alert('Не удалось удалить таймер');
                 });
         }
 
@@ -167,12 +196,12 @@
                     if (data.status === 'success') {
                         refreshTimers(); // Обновляем список таймеров после установки нового
                     } else {
-                        alert('Failed to set timer');
+                        alert('Не удалось установить таймер');
                     }
                 })
                 .catch(error => {
-                    console.error('Error:', error);
-                    alert('Failed to set timer');
+                    console.error('Ошибка:', error);
+                    alert('Не удалось установить таймер');
                 });
         });
 
@@ -184,5 +213,3 @@
         refreshTimers();
     </script>
 </body>
-
-</html>

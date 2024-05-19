@@ -38,6 +38,25 @@ app.post('/set-timer', (req, res) => {
         });
 });
 
+app.post('/delete-timer', (req, res) => {
+    const { key } = req.body;
+
+    // Удаляем ключ
+    client.del(key)
+        .then(result => {
+            if (result === 1) {
+                console.log(`Таймер удален: ${key}`);
+                res.json({ status: 'success', key });
+            } else {
+                res.status(404).json({ status: 'error', message: 'Таймер не найден' });
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка при удалении таймера:', error);
+            res.status(500).json({ status: 'error', message: error.message });
+        });
+});
+
 // Подписываемся на события истечения времени ключа
 subscriber.psubscribe('__keyevent@0__:expired', (err, count) => {
     if (err) {
