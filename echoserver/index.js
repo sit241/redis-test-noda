@@ -2,7 +2,12 @@ const express = require('express');
 const Redis = require('ioredis');
 const { Pool } = require('pg');
 const path = require('path');
+const http = require('http');
+const socketIo = require('socket.io');
+
 const app = express();
+const server = http.createServer(app);
+const io = socketIo(server);
 
 const redisClient = new Redis({
     host: process.env.REDIS_HOST || 'redis',
@@ -111,8 +116,10 @@ subscriber.psubscribe('__keyevent@0__:expired', (err, count) => {
     }
 });
 
-subscriber.on('pmessage', (pattern, channel, message) => {
+subscriber.on('pmessage', async (pattern, channel, message) => {
     console.log(`Таймер истек для ключа: ${message}`);
+    await pool.query('DELETE FROM timers WHERE key = $1', [message]);
+    io.emit('timerExpired', { key: message });
 });
 
 // Новый эндпоинт для получения всех актуальных таймеров и их оставшегося времени
@@ -163,6 +170,6 @@ app.delete('/user-timers', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`Echo server running on port ${PORT}`);
 });

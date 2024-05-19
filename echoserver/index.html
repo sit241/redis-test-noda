@@ -143,7 +143,15 @@
         </div>
     </div>
 
+    <script src="/socket.io/socket.io.js"></script>
     <script>
+        const socket = io();
+
+        socket.on('timerExpired', function (data) {
+            alert(`Таймер истек для ключа: ${data.key}`);
+            refreshTimers(); // Обновляем список таймеров
+        });
+
         // Функция для обновления списка таймеров
         function refreshTimers() {
             fetch('/timers')
