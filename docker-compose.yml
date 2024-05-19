@@ -1,0 +1,24 @@
+version: "3.8"
+
+services:
+  redis:
+    image: redis:6.2
+    command: ["redis-server", "--notify-keyspace-events", "Ex"]
+    ports:
+      - "6379:6379"
+
+  node-app:
+    build: ./noda
+    depends_on:
+      - redis
+      - echoserver
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    ports:
+      - "3000:3000"
+
+  echoserver:
+    build: ./echoserver
+    ports:
+      - "3001:3000"
