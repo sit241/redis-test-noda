@@ -4,6 +4,7 @@ const { Pool } = require('pg');
 const path = require('path');
 const http = require('http');
 const socketIo = require('socket.io');
+const { log } = require('console');
 
 const app = express();
 const server = http.createServer(app);
@@ -39,14 +40,14 @@ app.get('/', (req, res) => {
 });
 
 // Функция для сохранения таймера в PostgreSQL
-async function saveTimerToDB(userId, key, ttl) {
+async function saveTimerToDB(userId, key, expireAt) {
     const query = `
         INSERT INTO timers (user_id, key, ttl, created_at)
         VALUES ($1, $2, $3, NOW())
         ON CONFLICT (user_id, key) DO UPDATE
         SET ttl = $3, created_at = NOW()
     `;
-    await pool.query(query, [userId, key, ttl]);
+    await pool.query(query, [userId, key, expireAt]);
 }
 
 // Функция для загрузки таймеров из PostgreSQL
@@ -56,9 +57,19 @@ async function loadTimersFromDB() {
         FROM timers
     `;
     const res = await pool.query(query);
+    const currentTimeInSeconds = Math.floor(Date.now() / 1000);
+
     res.rows.forEach(row => {
         const userKey = `${row.key}`;
-        redisClient.set(userKey, 'timer', 'EX', row.ttl);
+        const remainingTime = row.ttl - currentTimeInSeconds;
+
+        if (remainingTime > 0) {
+            // Если осталось время, устанавливаем таймер с оставшимся временем
+            redisClient.set(userKey, 'timer', 'EX', remainingTime);
+        } else {
+            // Если время истекло, устанавливаем таймер на 5 секунд
+            redisClient.set(userKey, 'timer', 'EX', 50);
+        }
     });
 }
 
@@ -74,10 +85,17 @@ app.post('/set-timer', async (req, res) => {
     const userKey = `${userId}:${key}`;
 
     try {
-        // Устанавливаем таймер на ключ в Redis
-        await redisClient.set(userKey, 'timer', 'EX', ttl);
+        const ttlInSeconds = parseInt(ttl, 10); // время жизни в секундах
+        const currentTimeInSeconds = Math.floor(Date.now() / 1000); // текущее время в секундах
+        const expireAt = currentTimeInSeconds + ttlInSeconds; // конкретное время истечения
+
+        console.log(`Setting TTL for ${userKey} to expire at ${expireAt}`);
+
+        await redisClient.set(userKey, 'timer'); // устанавливаем значение без TTL
+        await redisClient.expireat(userKey, expireAt); // устанавливаем конкретную дату истечения
+
         // Сохраняем таймер в PostgreSQL
-        await saveTimerToDB(userId, userKey, ttl);
+        await saveTimerToDB(userId, userKey, expireAt);
         console.log(`Таймер установлен: ${userKey} на ${ttl} секунд`);
         res.json({ status: 'success', key: userKey, ttl });
     } catch (error) {
