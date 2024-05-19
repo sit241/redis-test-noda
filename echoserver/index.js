@@ -6,6 +6,10 @@ const client = new Redis({
     host: 'redis', // Имя сервиса Redis из Docker Compose
     port: 6379
 });
+const subscriber = new Redis({
+    host: 'redis',
+    port: 6379
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -21,16 +25,9 @@ app.get('/', (req, res) => {
 
 app.post('/set-timer', (req, res) => {
     const { key, ttl } = req.body;
-    client.defineCommand('setTimer', {
-        numberOfKeys: 1,
-        lua: `
-            local key = KEYS[1]
-            local ttl = ARGV[1]
-            redis.call("SET", key, "timer", "EX", ttl)
-        `
-    });
 
-    client.setTimer(key, ttl)
+    // Устанавливаем таймер на ключ
+    client.set(key, 'timer', 'EX', ttl)
         .then(() => {
             console.log(`Таймер установлен: ${key} на ${ttl} секунд`);
             res.json({ status: 'success', key, ttl });
@@ -39,6 +36,19 @@ app.post('/set-timer', (req, res) => {
             console.error('Ошибка при установке таймера:', error);
             res.status(500).json({ status: 'error', message: error.message });
         });
+});
+
+// Подписываемся на события истечения времени ключа
+subscriber.psubscribe('__keyevent@0__:expired', (err, count) => {
+    if (err) {
+        console.error('Ошибка подписки на события истечения ключа:', err);
+    } else {
+        console.log(`Подписан на ${count} канал(ы) событий истечения ключа.`);
+    }
+});
+
+subscriber.on('pmessage', (pattern, channel, message) => {
+    console.log(`Таймер истек для ключа: ${message}`);
 });
 
 const PORT = process.env.PORT || 3000;
