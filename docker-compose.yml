@@ -7,21 +7,15 @@ services:
     ports:
       - "6379:6379"
 
-  node-app:
-    build: ./noda
+  echoserver:
+    build: ./echoserver
     depends_on:
       - redis
-      - echoserver
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     ports:
       - "3000:3000"
     volumes:
-      - ./noda:/app # Монтируем локальную директорию с кодом внутрь контейнера
+      - ./echoserver:/app # Монтируем локальную директорию с кодом внутрь контейнера
     command: /bin/sh -c "npm install && nodemon index.js"
-
-  echoserver:
-    build: ./echoserver
-    ports:
-      - "3001:3000"
