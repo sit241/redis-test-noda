@@ -51,6 +51,28 @@ subscriber.on('pmessage', (pattern, channel, message) => {
     console.log(`Таймер истек для ключа: ${message}`);
 });
 
+// Новый эндпоинт для получения всех актуальных таймеров и их оставшегося времени
+app.get('/timers', async (req, res) => {
+    try {
+        // Получаем все ключи с установленными таймерами
+        const keys = await client.keys('*');
+        const timers = [];
+
+        // Для каждого ключа получаем оставшееся время до истечения
+        for (const key of keys) {
+            const ttl = await client.ttl(key);
+            if (ttl > 0) {
+                timers.push({ key, ttl });
+            }
+        }
+
+        res.json({ status: 'success', timers });
+    } catch (error) {
+        console.error('Ошибка при получении таймеров:', error);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Echo server running on port ${PORT}`);

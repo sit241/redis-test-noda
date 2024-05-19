@@ -5,21 +5,151 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Set Timer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        h1,
+        h2 {
+            color: #333;
+        }
+
+        #timerForm {
+            margin-bottom: 20px;
+        }
+
+        #timerForm label {
+            display: block;
+            margin-top: 10px;
+            color: #555;
+        }
+
+        #timerForm input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        #timerForm button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        #timerForm button:hover {
+            background-color: #0056b3;
+        }
+
+        #refreshTimers {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        #refreshTimers:hover {
+            background-color: #218838;
+        }
+
+        #timers {
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        #timers ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        #timers li {
+            background: #f8f9fa;
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
 </head>
 
 <body>
-    <h1>Set Timer</h1>
-    <form id="timerForm">
-        <label for="key">Key:</label>
-        <input type="text" id="key" name="key" required>
-        <br>
-        <label for="ttl">TTL (seconds):</label>
-        <input type="number" id="ttl" name="ttl" required>
-        <br>
-        <button type="submit">Set Timer</button>
-    </form>
+    <div class="container">
+        <h1>Set Timer</h1>
+        <form id="timerForm">
+            <label for="key">Key:</label>
+            <input type="text" id="key" name="key" required>
+            <br>
+            <label for="ttl">TTL (seconds):</label>
+            <input type="number" id="ttl" name="ttl" required>
+            <br>
+            <button type="submit">Set Timer</button>
+        </form>
+
+        <h2>Active Timers</h2>
+        <button id="refreshTimers">Refresh Timers</button>
+        <div id="timers">
+            <!-- Список таймеров будет отображаться здесь -->
+        </div>
+    </div>
 
     <script>
+        // Функция для обновления списка таймеров
+        function refreshTimers() {
+            fetch('/timers')
+                .then(response => response.json())
+                .then(data => {
+                    const timersDiv = document.getElementById('timers');
+                    timersDiv.innerHTML = ''; // Очищаем текущий список
+                    if (data.status === 'success') {
+                        const timers = data.timers;
+                        if (timers.length > 0) {
+                            const ul = document.createElement('ul');
+                            timers.forEach(timer => {
+                                const li = document.createElement('li');
+                                li.innerHTML = `ключ: ${timer.key}, </br> секунд : ${timer.ttl} seconds`;
+                                ul.appendChild(li);
+                            });
+                            timersDiv.appendChild(ul);
+                        } else {
+                            timersDiv.textContent = 'No active timers.';
+                        }
+                    } else {
+                        timersDiv.textContent = 'Failed to load timers.';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    const timersDiv = document.getElementById('timers');
+                    timersDiv.textContent = 'Failed to load timers.';
+                });
+        }
+
         document.getElementById('timerForm').addEventListener('submit', function (e) {
             e.preventDefault();
             const key = document.getElementById('key').value;
@@ -35,7 +165,7 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        alert(`Timer set for key "${data.key}" with TTL of ${data.ttl} seconds`);
+                        refreshTimers(); // Обновляем список таймеров после установки нового
                     } else {
                         alert('Failed to set timer');
                     }
@@ -45,6 +175,13 @@
                     alert('Failed to set timer');
                 });
         });
+
+        document.getElementById('refreshTimers').addEventListener('click', function () {
+            refreshTimers();
+        });
+
+        // Обновляем список таймеров при загрузке страницы
+        refreshTimers();
     </script>
 </body>
 
