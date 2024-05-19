@@ -13,5 +13,8 @@ RUN npm install
 # Копируем остальную часть приложения
 COPY . .
 
-# Запуск приложения
-CMD ["node", "index.js"]
+# Установка nodemon глобально
+RUN npm install -g nodemon
+
+# Запуск приложения с nodemon
+CMD ["nodemon", "index.js"]

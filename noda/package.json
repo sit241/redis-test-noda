@@ -4,10 +4,13 @@
 	"description": "",
 	"main": "index.js",
 	"scripts": {
-		"start": "node index.js"
+		"start": "nodemon index.js"
 	},
 	"dependencies": {
 		"axios": "^0.21.1",
 		"ioredis": "^4.28.5"
+	},
+	"devDependencies": {
+		"nodemon": "^2.0.15"
 	}
 }
