@@ -93,6 +93,29 @@ app.get('/timers', async (req, res) => {
     }
 });
 
+// Новый эндпоинт для удаления всех таймеров пользователя
+app.delete('/user-timers', async (req, res) => {
+    const { userId } = req.body;
+
+    try {
+        // Получаем все ключи, соответствующие пользователю
+        const keys = await client.keys(`${userId}:*`);
+
+        if (keys.length === 0) {
+            return res.status(404).json({ status: 'error', message: 'Таймеры не найдены' });
+        }
+
+        // Удаляем все найденные ключи
+        await client.del(keys);
+        console.log(`Удалены все таймеры для пользователя: ${userId}`);
+
+        res.json({ status: 'success', userId, deletedKeys: keys });
+    } catch (error) {
+        console.error('Ошибка при удалении таймеров пользователя:', error);
+        res.status(500).json({ status: 'error', message: error.message });
+    }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Echo server running on port ${PORT}`);
