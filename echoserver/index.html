@@ -102,6 +102,9 @@
     <div class="container">
         <h1>Set Timer</h1>
         <form id="timerForm">
+            <label for="userId">Id:</label>
+            <input type="text" id="userId" name="userId" required>
+            <br>
             <label for="key">Key:</label>
             <input type="text" id="key" name="key" required>
             <br>
@@ -181,6 +184,7 @@
 
         document.getElementById('timerForm').addEventListener('submit', function (e) {
             e.preventDefault();
+            const userId = document.getElementById('userId').value;
             const key = document.getElementById('key').value;
             const ttl = document.getElementById('ttl').value;
 
@@ -189,7 +193,7 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ key, ttl })
+                body: JSON.stringify({ userId, key, ttl })
             })
                 .then(response => response.json())
                 .then(data => {

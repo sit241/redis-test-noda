@@ -24,13 +24,14 @@ app.get('/', (req, res) => {
 });
 
 app.post('/set-timer', (req, res) => {
-    const { key, ttl } = req.body;
+    const { userId, key, ttl } = req.body;
+    const userKey = `${userId}:${key}`;
 
     // Устанавливаем таймер на ключ
-    client.set(key, 'timer', 'EX', ttl)
+    client.set(userKey, 'timer', 'EX', ttl)
         .then(() => {
-            console.log(`Таймер установлен: ${key} на ${ttl} секунд`);
-            res.json({ status: 'success', key, ttl });
+            console.log(`Таймер установлен: ${userKey} на ${ttl} секунд`);
+            res.json({ status: 'success', key: userKey, ttl });
         })
         .catch(error => {
             console.error('Ошибка при установке таймера:', error);
